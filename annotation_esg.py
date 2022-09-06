@@ -27,11 +27,13 @@ set_bg_hack_url()
 if 'count' not in st.session_state:
     st.session_state.count = 0
 if 'ctxt' not in st.session_state:
-    st.session_state.ctxt = ("",)
+    st.session_state.ctxt = None
+if 'desc' not in st.session_state:
+    st.session_state.desc = None
+title =  "Context Paragraph: {cnt}".format(cnt=st.session_state.count)
 with st.form("my_form"):
     with st.sidebar:
         uploaded_file = st.file_uploader("Choose a CSV file")
-        title =  "Context Paragraph: {cnt}".format(cnt=st.session_state.count)
         ctxt_col = st.text_input("Enter Column Name containing Contexts")
         # Every form must have a submit button.
         submitted = st.form_submit_button("Submit")
@@ -39,9 +41,12 @@ with st.form("my_form"):
         with open("descriptions.csv", "wb") as f:
             f.write(uploaded_file.getvalue())
         desc=pd.read_csv("descriptions.csv")
-        st.session_state.ctxt=desc
-        
-st.text_area(title, st.session_state.ctxt[ctxt_col][st.session_state.count], height = 250)
+        st.session_state.desc=desc
+
+if st.session_state.desc is None:
+    st.text_area(title, st.session_state.ctxt, height = 250)
+else:
+    st.text_area(title, st.session_state.desc[ctxt_col][st.session_state.count], height = 250)
 
 New_Labels = ["question", "answer_start", "context", "text"]
 save_df = pd.DataFrame(columns=New_Labels)
@@ -80,11 +85,10 @@ def find_substring(string, substring):
     else:
         return 0, 0
 
-start, end = find_substring(st.session_state.ctxt[ctxt_col][st.session_state.count], answer)
-st.write("Answer start and end positions: ", start, end)
-
 if st.button("Save"):
-    save_list = [question_selectbox, start, st.session_state.ctxt[ctxt_col][st.session_state.count], answer]
+    start, end = find_substring(st.session_state.desc[ctxt_col][st.session_state.count], answer)
+    st.write("Answer start and end positions: ", start, end)
+    save_list = [question_selectbox, start, st.session_state.desc[ctxt_col][st.session_state.count], answer]
     append_df = pd.DataFrame([save_list])
     append_df.columns = New_Labels
     append_df = assign_random_id(append_df, 'context', 'id')
